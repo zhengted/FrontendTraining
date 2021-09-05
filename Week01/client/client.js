@@ -79,12 +79,16 @@ class ResponseParser {
     }
     get response() {
         this.statusLine.match(/HTTP\/1.1 ([0-9]) ([\s\S]+)/);
-        return {
+        const ret = {
             statusCode: RegExp.$1,
             statusText: RegExp.$2,
             headers: this.headers,
+
+        }
+        if (ret.statusCode === '200') {
             body: this.bodyParser.content.join('')
         }
+        return ret
     }
 
     receive(string) {
