@@ -50,7 +50,9 @@ class Request {
     }
     toString() {
         return `${this.method} ${this.path} HTTP/1.1\r
-${Object.keys(this.headers).map(key => `${key}: ${this.headers[key]}`).join('\r\n')}\r\r${this.bodyText}`
+${Object.keys(this.headers).map(key => `${key}: ${this.headers[key]}`).join('\r\n')}\r
+\r
+${this.bodyText}`
     }
 
 }
@@ -199,7 +201,7 @@ void async function (){
     let request = new Request({
         method: "POST",
         host:"127.0.0.1",
-        port:"8055",
+        port:"8080",
         path:"/",
         headers: {
             ["X-Foo2"]:"customed"
@@ -209,8 +211,7 @@ void async function (){
         }
     });
     let response = await request.send();
-    console.log(response)
 
-    let dom = parser.parseHTML(Response.body);
+    let dom = parser.parseHTML(response.body);
 
 }();
