@@ -35,12 +35,13 @@ class Request {
                 })
             }
             connection.on('data', (data) => {
-                console.log(data.toString());
                 parser.receive(data.toString());
+                //console.log(data.toString())
                 if (parser.isFinished) {
                     resolve(parser.response);
-                    connection.end();
                 }
+
+                connection.end()
             });
             connection.on('error',(err) => {
                reject(err);
@@ -84,20 +85,17 @@ class ResponseParser {
     }
     get response() {
         this.statusLine.match(/HTTP\/1.1 ([0-9]) ([\s\S]+)/);
-        const ret = {
+        //console.log("this.bodyParser.content"+ this.bodyParser.content)
+        return {
             statusCode: RegExp.$1,
             statusText: RegExp.$2,
             headers: this.headers,
-
+            body:this.bodyParser.content.join('')
         }
-        if (ret.statusCode === '200') {
-            body: this.bodyParser.content.join('')
-        }
-        return ret
     }
 
     receive(string) {
-        for (let i = 0; i <string.length; i++) {
+        for (let i = 0; i < string.length; i++) {
             this.receiveChar(string.charAt(i));
         }
     }
@@ -106,7 +104,7 @@ class ResponseParser {
             if (char === '\r') {
                 this.current = this.WAITING_STATUS_LINE_END;
             } else {
-                this.statusLine += char
+                this.statusLine += char;
             }
         } else if (this.current === this.WAITING_STATUS_LINE_END) {
             if (char === '\n') {
@@ -116,8 +114,8 @@ class ResponseParser {
             if (char === ':') {
                 this.current = this.WAITING_HEADER_SPACE;
             } else if (char === '\r') {
-                this.current = this.WAITING_HEADER_SPACE;
-                if (!this.headers['Transfer-Encoding'] === 'chunked') {
+                this.current = this.WAITING_HEADER_BLOCK_END;
+                if (this.headers['Transfer-Encoding'] === 'chunked') {
                     this.bodyParser = new TrunkedBodyParser();
                 }
             } else {
@@ -134,9 +132,9 @@ class ResponseParser {
                 this.headerName = "";
                 this.headerValue = "";
             } else {
-                this.headerValue += char
+                this.headerValue += char;
             }
-        } else if (this.current === this.WAITING_STATUS_LINE_END) {
+        } else if (this.current === this.WAITING_HEADER_LINE_END) {
             if (char === '\n') {
                 this.current = this.WAITING_HEADER_NAME;
             }
@@ -145,7 +143,7 @@ class ResponseParser {
                 this.current = this.WAITING_BODY;
             }
         } else if (this.current === this.WAITING_BODY) {
-            this.bodyParser.receive(char);
+            this.bodyParser.receiveChar(char);
         }
     }
 }
@@ -211,7 +209,9 @@ void async function (){
         }
     });
     let response = await request.send();
-
+    console.log("get response")
     let dom = parser.parseHTML(response.body);
 
+    console.log("dom finished")
+    console.log(JSON.stringify(dom, null, "    "))
 }();
